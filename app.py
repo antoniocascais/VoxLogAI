@@ -39,6 +39,16 @@ def upload_file():
     if '.' not in file.filename or file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
         return jsonify({'error': 'Unsupported file format'}), 400
 
+    # Check file size (15MB limit)
+    MAX_FILE_SIZE = 15 * 1024 * 1024  # 15MB in bytes
+    file.seek(0, os.SEEK_END)
+    file_size = file.tell()
+    file.seek(0)
+
+    if file_size > MAX_FILE_SIZE:
+        logger.warning(f"File too large: {file.filename}, size: {file_size/1024/1024:.2f}MB")
+        return jsonify({'error': f'File too large. Maximum size is 15MB. Your file is {file_size/1024/1024:.2f}MB.'}), 400
+
     try:
         # Save file to a temporary location
         temp_file = tempfile.NamedTemporaryFile(delete=False)
