@@ -254,6 +254,60 @@
             gap: 0.5rem;
         }
         
+        .transcript-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .action-button {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 0;
+            min-width: auto;
+            box-shadow: none;
+        }
+        
+        .action-button:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        
+        .action-button:disabled {
+            opacity: 0.5;
+            background-color: rgba(255, 255, 255, 0.1);
+            cursor: not-allowed;
+        }
+        
+        .copied-tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            top: -30px;
+            right: 0;
+            animation: fadeOut 1.5s forwards;
+            pointer-events: none;
+        }
+        
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        
         .transcript-content {
             padding: 1.5rem;
             min-height: 300px;
@@ -296,6 +350,24 @@
         .placeholder-text {
             color: var(--gray-dark);
             font-style: italic;
+        }
+        
+        .options-container {
+            margin-top: 1rem;
+        }
+        
+        .toggle-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .toggle-label {
+            font-size: 0.85rem;
+            color: var(--gray-dark);
+            font-weight: 500;
         }
         
         .timestamp {
@@ -387,11 +459,14 @@
                     <span id="file-name"></span>
                 </div>
                 
+                <div class="options-container">
+                    <label class="toggle-option">
+                        <input type="checkbox" id="timestamp-toggle" checked>
+                        <span class="toggle-label">Include timestamps</span>
+                    </label>
+                </div>
+                
                 <div class="buttons">
-                    <button id="upload-button" disabled>
-                        <i class="fas fa-upload"></i>
-                        Upload
-                    </button>
                     <button id="transcribe-button" disabled>
                         <i class="fas fa-language"></i>
                         Transcribe
@@ -409,12 +484,20 @@
         <div class="transcript-container">
             <div class="transcript-header">
                 <h2><i class="fas fa-file-alt"></i> Transcript</h2>
-                <div id="transcript-status" class="hidden">
-                    <i class="fas fa-check-circle"></i>
+                <div class="transcript-actions">
+                    <button id="new-button" class="action-button" title="Start new transcription">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button id="copy-button" class="action-button" title="Copy to clipboard" disabled>
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <div id="transcript-status" class="hidden">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
                 </div>
             </div>
             <div id="transcript-content" class="transcript-content">
-                <span class="placeholder-text">No transcript yet. Upload an audio file and click "Transcribe".</span>
+                <span class="placeholder-text">No transcript yet. Select an audio file and click "Transcribe".</span>
             </div>
         </div>
     </div>
@@ -424,9 +507,7 @@
     </footer>
     
     <script>
-        let tempPath = null;
         const audioFileInput = document.getElementById('audio-file');
-        const uploadButton = document.getElementById('upload-button');
         const transcribeButton = document.getElementById('transcribe-button');
         const fileInfo = document.getElementById('file-info');
         const fileName = document.getElementById('file-name');
@@ -438,6 +519,9 @@
         
         // Setup drag and drop
         const uploadZone = document.getElementById('upload-zone');
+        const copyButton = document.getElementById('copy-button');
+        const newButton = document.getElementById('new-button');
+        const timestampToggle = document.getElementById('timestamp-toggle');
         
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
             uploadZone.addEventListener(eventName, preventDefaults, false);
@@ -490,7 +574,7 @@
                 if (file.size > MAX_FILE_SIZE) {
                     fileName.textContent = `${file.name} (${formatFileSize(file.size)})`;
                     fileInfo.classList.remove('hidden');
-                    uploadButton.disabled = true;
+                    transcribeButton.disabled = true;
                     
                     errorText.textContent = `File too large. Maximum size is 15MB. Your file is ${formatFileSize(file.size)}.`;
                     errorMessage.classList.remove('hidden');
@@ -499,24 +583,23 @@
                 
                 fileName.textContent = `${file.name} (${formatFileSize(file.size)})`;
                 fileInfo.classList.remove('hidden');
-                uploadButton.disabled = false;
+                transcribeButton.disabled = false;
                 
                 // Reset previous state
-                transcribeButton.disabled = true;
                 errorMessage.classList.add('hidden');
-                transcriptContent.innerHTML = '<span class="placeholder-text">No transcript yet. Upload an audio file and click "Transcribe".</span>';
+                transcriptContent.innerHTML = '<span class="placeholder-text">No transcript yet. Click "Transcribe" to process your audio.</span>';
                 transcriptStatus.classList.add('hidden');
             }
         }
         
-        // Handle file upload
-        uploadButton.addEventListener('click', async function() {
+        // Handle transcription (combined upload and transcribe)
+        transcribeButton.addEventListener('click', async function() {
             const file = audioFileInput.files[0];
             if (!file) return;
             
-            // Show uploading status
-            uploadButton.disabled = true;
-            uploadButton.innerHTML = '<span class="spinner"></span> Uploading...';
+            // Step 1: Upload file
+            transcribeButton.disabled = true;
+            transcribeButton.innerHTML = '<span class="spinner"></span> Uploading...';
             uploadStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Uploading file...';
             uploadStatus.classList.remove('hidden');
             errorMessage.classList.add('hidden');
@@ -525,57 +608,45 @@
             formData.append('audio', file);
             
             try {
-                const response = await fetch('/upload', {
+                // Step 1: Upload file
+                const uploadResponse = await fetch('/upload', {
                     method: 'POST',
                     body: formData
                 });
                 
-                const data = await response.json();
+                const uploadData = await uploadResponse.json();
                 
-                if (response.ok) {
-                    uploadStatus.innerHTML = '<i class="fas fa-check-circle"></i> Upload complete!';
-                    uploadButton.innerHTML = '<i class="fas fa-check"></i> Uploaded';
-                    tempPath = data.temp_path;
-                    transcribeButton.disabled = false;
-                } else {
-                    throw new Error(data.error || 'Upload failed');
+                if (!uploadResponse.ok) {
+                    throw new Error(uploadData.error || 'Upload failed');
                 }
-            } catch (error) {
-                uploadStatus.classList.add('hidden');
-                errorText.textContent = error.message;
-                errorMessage.classList.remove('hidden');
-                uploadButton.innerHTML = '<i class="fas fa-upload"></i> Upload';
-                uploadButton.disabled = false;
-            }
-        });
-        
-        // Handle transcription
-        transcribeButton.addEventListener('click', async function() {
-            if (!tempPath) return;
-            
-            transcribeButton.disabled = true;
-            transcribeButton.innerHTML = '<span class="spinner"></span> Transcribing...';
-            uploadStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Transcribing audio...';
-            errorMessage.classList.add('hidden');
-            
-            try {
-                const response = await fetch('/transcribe', {
+                
+                const tempPath = uploadData.temp_path;
+                
+                // Step 2: Transcribe file
+                uploadStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Transcribing audio...';
+                transcribeButton.innerHTML = '<span class="spinner"></span> Transcribing...';
+                
+                const transcribeResponse = await fetch('/transcribe', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ temp_path: tempPath })
+                    body: JSON.stringify({ 
+                        temp_path: tempPath,
+                        include_timestamps: timestampToggle.checked 
+                    })
                 });
                 
-                const data = await response.json();
+                const transcribeData = await transcribeResponse.json();
                 
-                if (response.ok) {
-                    transcriptContent.innerHTML = formatTranscript(data.transcript);
+                if (transcribeResponse.ok) {
+                    transcriptContent.innerHTML = formatTranscript(transcribeData.transcript);
                     uploadStatus.innerHTML = '<i class="fas fa-check-circle"></i> Transcription complete!';
                     transcribeButton.innerHTML = '<i class="fas fa-check"></i> Transcribed';
                     transcriptStatus.classList.remove('hidden');
+                    copyButton.disabled = false;
                 } else {
-                    throw new Error(data.error || 'Transcription failed');
+                    throw new Error(transcribeData.error || 'Transcription failed');
                 }
             } catch (error) {
                 uploadStatus.classList.add('hidden');
@@ -595,12 +666,79 @@
         
         // Format transcript with line breaks and timestamp formatting
         function formatTranscript(text) {
-            // Format timestamps like [8m40s242ms - 8m51s12ms]
-            const formattedText = text.replace(/\[(\d+m\d+s\d+ms\s*-\s*\d+m\d+s\d+ms)\]/g, 
-                                             '<span class="timestamp">[$1]</span>');
+            let formattedText = text;
+            
+            // Format timestamps like [8m40s242ms - 8m51s12ms] if timestamps are enabled
+            if (timestampToggle.checked) {
+                formattedText = text.replace(/\[(\d+m\d+s\d+ms\s*-\s*\d+m\d+s\d+ms)\]/g, 
+                                         '<span class="timestamp">[$1]</span>');
+            }
             
             // Replace new lines with <br> tags
             return formattedText.replace(/\n/g, '<br>');
+        }
+        
+        // Copy transcript to clipboard
+        copyButton.addEventListener('click', function() {
+            // Get the text content without HTML tags
+            const transcriptText = transcriptContent.innerText;
+            
+            // Check if there's actual content to copy
+            if (transcriptText && !transcriptText.includes('No transcript yet')) {
+                navigator.clipboard.writeText(transcriptText).then(function() {
+                    // Show copied message
+                    const tooltip = document.createElement('span');
+                    tooltip.className = 'copied-tooltip';
+                    tooltip.textContent = 'Copied!';
+                    
+                    // Position the tooltip relative to the button
+                    copyButton.style.position = 'relative';
+                    copyButton.appendChild(tooltip);
+                    
+                    // Remove tooltip after animation completes
+                    setTimeout(function() {
+                        copyButton.removeChild(tooltip);
+                    }, 1500);
+                }).catch(function(err) {
+                    console.error('Could not copy text: ', err);
+                });
+            }
+        });
+        
+        // Handle timestamp toggle
+        timestampToggle.addEventListener('change', function() {
+            // If transcript already exists, reformat it
+            if (transcriptContent.innerHTML && !transcriptContent.innerHTML.includes('placeholder-text')) {
+                const currentText = transcriptContent.innerText;
+                // On toggle change, we need to re-apply formatting to show/hide timestamps
+                transcriptContent.innerHTML = formatTranscript(currentText);
+            }
+        });
+        
+        // Handle new transcription button
+        newButton.addEventListener('click', function() {
+            // Reset form and UI state
+            resetUIState();
+        });
+        
+        // Function to reset UI to initial state
+        function resetUIState() {
+            // Reset file input
+            audioFileInput.value = '';
+            
+            // Reset UI elements
+            fileInfo.classList.add('hidden');
+            uploadStatus.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+            transcriptStatus.classList.add('hidden');
+            
+            // Reset buttons
+            transcribeButton.disabled = true;
+            transcribeButton.innerHTML = '<i class="fas fa-language"></i> Transcribe';
+            copyButton.disabled = true;
+            
+            // Reset transcript
+            transcriptContent.innerHTML = '<span class="placeholder-text">No transcript yet. Select an audio file and click "Transcribe".</span>';
         }
     </script>
 </body>

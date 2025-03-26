@@ -70,8 +70,12 @@ def transcribe():
         return jsonify({'error': 'No file path provided'}), 400
     
     try:
+        # Get timestamp preference from request
+        include_timestamps = data.get('include_timestamps', True)
+        logger.info(f"Timestamp preference: {'include' if include_timestamps else 'exclude'}")
+        
         # Process the audio file
-        transcript = transcribe_audio(temp_path)
+        transcript = transcribe_audio(temp_path, include_timestamps)
         logger.info(f"File transcribed successfully")
         
         # Delete the temporary file after processing

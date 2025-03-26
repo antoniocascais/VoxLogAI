@@ -16,7 +16,9 @@ API_KEY = os.getenv('GEMINI_API_KEY')  # Get API key from environment variable
 if not API_KEY:
     raise ValueError("GEMINI_API_KEY environment variable is not set")
 
-PROMPT = 'Generate a transcript of the speech. Use timestamps in format [8m40s242ms - 8m51s12ms]'
+# Define prompts for with and without timestamps
+PROMPT_WITH_TIMESTAMPS = 'Generate a transcript of the speech. Use timestamps in format [8m40s242ms - 8m51s12ms]'
+PROMPT_WITHOUT_TIMESTAMPS = 'Generate a transcript of the speech. Do not include any timestamps.'
 
 # Initialize client
 client = genai.Client(api_key=API_KEY)
@@ -74,11 +76,12 @@ def generate_content(client, model, contents):
         contents=contents
     )
 
-def transcribe_audio(filepath):
+def transcribe_audio(filepath, include_timestamps=True):
     """Transcribe audio file
     
     Args:
         filepath: Path to the audio file
+        include_timestamps: Whether to include timestamps in the transcript (default: True)
         
     Returns:
         string: The transcribed text
@@ -93,7 +96,9 @@ def transcribe_audio(filepath):
 
         # Generate content with retry
         logger.info("Step 2: Generating transcript from audio")
-        response = generate_content(client, MODEL, [PROMPT, myfile])
+        prompt = PROMPT_WITH_TIMESTAMPS if include_timestamps else PROMPT_WITHOUT_TIMESTAMPS
+        logger.info(f"Using prompt: {prompt}")
+        response = generate_content(client, MODEL, [prompt, myfile])
         
         # Get the transcribed text
         transcript = response.text
