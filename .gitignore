@@ -179,5 +179,9 @@ cython_debug/
 # txt files
 *.txt
 
-# Claude file
+# local files
 CLAUDE.md
+python_packages_update.sh
+
+# tasks folder
+tasks/

@@ -1,0 +1,38 @@
+# Git files
+.git
+.gitignore
+
+# Environment files
+.env
+.env.*
+!.env.example
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# Sample files
+*.mp3
+*.wav
+*.aiff
+*.aac
+*.ogg
+*.flac
+
+# IDE files
+.vscode/
+.idea/
+
+# Documentation
+tasks/
+CLAUDE.md

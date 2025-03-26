@@ -1,0 +1,11 @@
+services:
+  voxlogai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: voxlogai
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./.env:/app/.env
+    restart: unless-stopped
