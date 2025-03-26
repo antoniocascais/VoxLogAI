@@ -172,3 +172,12 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# mp3 files
+*.mp3
+
+# txt files
+*.txt
+
+# Claude file
+CLAUDE.md
