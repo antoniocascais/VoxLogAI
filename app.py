@@ -4,6 +4,10 @@ import os
 import tempfile
 import logging
 import sys
+import re
+import yt_dlp
+import uuid
+import time
 from dotenv import load_dotenv
 from transcriber import transcribe_audio
 
@@ -17,6 +21,10 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger(__name__)
+
+# Dictionary to store mapping between file_id and actual file path
+# Format: {file_id: {"path": file_path, "timestamp": creation_time}}
+temp_file_map = {}
 
 app = Flask(__name__)
 CORS(app)
@@ -55,19 +63,65 @@ def upload_file():
         file.save(temp_file.name)
         temp_file.close()
         
-        logger.info(f"File uploaded successfully: {file.filename}")
-        return jsonify({'success': True, 'temp_path': temp_file.name}), 200
+        # Generate a secure unique ID for this file
+        file_id = str(uuid.uuid4())
+        
+        # Store the mapping between ID and actual path
+        temp_file_map[file_id] = {
+            "path": temp_file.name, 
+            "timestamp": time.time()
+        }
+        
+        # Clean up old temp files
+        cleanup_temp_files()
+        
+        logger.info(f"File uploaded successfully: {file.filename}, assigned ID: {file_id}")
+        return jsonify({'success': True, 'file_id': file_id}), 200
     except Exception as e:
         logger.error(f"Error uploading file: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+# Function to clean up old temporary files
+def cleanup_temp_files():
+    """Remove mapping entries older than 30 minutes and delete their associated files"""
+    current_time = time.time()
+    expired_time = current_time - (30 * 60)  # 30 minutes in seconds
+    
+    # Find expired entries
+    expired_ids = [file_id for file_id, data in temp_file_map.items() 
+                if data["timestamp"] < expired_time]
+    
+    # Delete expired files and remove from map
+    for file_id in expired_ids:
+        try:
+            file_path = temp_file_map[file_id]["path"]
+            if os.path.exists(file_path):
+                os.unlink(file_path)
+                logger.info(f"Deleted expired temp file: {file_path}")
+            del temp_file_map[file_id]
+            logger.info(f"Removed expired file_id: {file_id}")
+        except Exception as e:
+            logger.warning(f"Error cleaning up file_id {file_id}: {str(e)}")
+
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
     data = request.json
-    temp_path = data.get('temp_path')
+    file_id = data.get('file_id')
     
-    if not temp_path:
-        return jsonify({'error': 'No file path provided'}), 400
+    if not file_id:
+        return jsonify({'error': 'No file ID provided'}), 400
+    
+    # Look up the actual file path using the provided ID
+    if file_id not in temp_file_map:
+        return jsonify({'error': 'Invalid or expired file ID'}), 400
+    
+    temp_path = temp_file_map[file_id]["path"]
+    
+    # Validate that the temporary path is within the expected temporary directory
+    expected_temp_dir = tempfile.gettempdir()
+    if not os.path.abspath(temp_path).startswith(os.path.abspath(expected_temp_dir)):
+        logger.error(f"Security violation: temp_path {temp_path} is outside of expected temp directory {expected_temp_dir}")
+        return jsonify({'error': 'Security violation detected'}), 400
     
     try:
         # Get timestamp preference from request
@@ -81,12 +135,123 @@ def transcribe():
         # Delete the temporary file after processing
         try:
             os.unlink(temp_path)
+            # Remove from our mapping after successful processing
+            del temp_file_map[file_id]
+            logger.info(f"Deleted temp file and removed mapping for {file_id}")
         except Exception as e:
             logger.warning(f"Could not delete temp file: {str(e)}")
         
         return jsonify({'transcript': transcript}), 200
     except Exception as e:
         logger.error(f"Error transcribing file: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/transcribe_youtube', methods=['POST'])
+def transcribe_youtube():
+    data = request.json
+    youtube_url = data.get('youtube_url')
+    
+    if not youtube_url:
+        return jsonify({'error': 'No YouTube URL provided'}), 400
+    
+    # Validate YouTube URL
+    youtube_pattern = r'^(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)[a-zA-Z0-9_-]{11}.*$'
+    if not re.match(youtube_pattern, youtube_url):
+        return jsonify({'error': 'Invalid YouTube URL format'}), 400
+    
+    try:
+        # Get timestamp preference from request
+        include_timestamps = data.get('include_timestamps', True)
+        logger.info(f"Timestamp preference: {'include' if include_timestamps else 'exclude'}")
+        
+        # Download audio from YouTube
+        logger.info(f"Downloading audio from YouTube: {youtube_url}")
+        
+        # Create a temporary directory for the download
+        temp_dir = tempfile.mkdtemp()
+        
+        # Simplified approach - create a more predictable output file
+        output_template = os.path.join(temp_dir, 'audio.mp3')
+        
+        # Define options for yt-dlp - simple approach without ffmpeg dependency
+        ydl_opts = {
+            # Extract audio only - use a format that doesn't need conversion
+            'format': 'bestaudio[ext=m4a]/bestaudio[ext=mp3]/bestaudio',
+            # Fixed output name to avoid path issues
+            'outtmpl': os.path.join(temp_dir, 'audio.%(ext)s'),
+            # No post-processing to avoid ffmpeg dependency
+            # 'postprocessors': [],
+            'writethumbnail': False,
+            'noplaylist': True,
+        }
+        
+        # Download the video and extract audio
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info_dict = ydl.extract_info(youtube_url, download=True)
+                video_title = info_dict.get('title', 'Unknown Title')
+                logger.info(f"Downloaded and extracted audio from: {video_title}")
+        except Exception as e:
+            logger.error(f"Error during YouTube download: {str(e)}")
+            raise
+        
+        # Find any audio file in the temp directory
+        logger.info(f"Searching for downloaded audio files in: {temp_dir}")
+        files = os.listdir(temp_dir)
+        logger.info(f"Files in directory: {files}")
+        
+        if not files:
+            raise Exception("No files found after YouTube download")
+        
+        # Check for common audio extensions first
+        for ext in ['.m4a', '.mp3', '.webm', '.opus', '.ogg']:
+            for file in files:
+                if file.endswith(ext):
+                    final_temp_path = os.path.join(temp_dir, file)
+                    logger.info(f"Found audio file with {ext} extension: {final_temp_path}")
+                    break
+            if 'final_temp_path' in locals():
+                break
+        
+        # If no audio file with known extension, just use the first file
+        if 'final_temp_path' not in locals():
+            final_temp_path = os.path.join(temp_dir, files[0])
+            logger.info(f"No known audio format found, using first file: {final_temp_path}")
+        
+        # Process the audio file
+        logger.info(f"Transcribing YouTube audio: {video_title}")
+        transcript = transcribe_audio(final_temp_path, include_timestamps)
+        logger.info(f"YouTube audio transcribed successfully: {video_title}")
+        
+        # Delete the temporary files after processing
+        try:
+            # Remove the temp file we used
+            if os.path.exists(final_temp_path):
+                os.unlink(final_temp_path)
+                logger.info(f"Deleted temp file: {final_temp_path}")
+            
+            # Clean up any other files in the temp directory
+            for f in os.listdir(temp_dir):
+                try:
+                    file_path = os.path.join(temp_dir, f)
+                    if os.path.isfile(file_path):
+                        os.unlink(file_path)
+                        logger.info(f"Deleted additional temp file: {file_path}")
+                except Exception as e:
+                    logger.warning(f"Could not delete temp file {f}: {str(e)}")
+            
+            # Remove the temp directory
+            os.rmdir(temp_dir)
+            logger.info(f"Deleted temp directory: {temp_dir}")
+        except Exception as e:
+            logger.warning(f"Could not delete all temp files: {str(e)}")
+        
+        return jsonify({'transcript': transcript, 'title': video_title}), 200
+    except yt_dlp.utils.DownloadError as e:
+        logger.error(f"YouTube download error: {str(e)}")
+        return jsonify({'error': f'Error downloading YouTube video: {str(e)}'}), 400
+    except Exception as e:
+        logger.error(f"Error transcribing YouTube audio: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

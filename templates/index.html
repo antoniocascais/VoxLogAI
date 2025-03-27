@@ -6,6 +6,8 @@
     <title>VoxLogAI - Audio Transcriber</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- DOMPurify for HTML sanitization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.8/purify.min.js"></script>
     <style>
         :root {
             --primary: #2e7d32;
@@ -151,6 +153,102 @@
             justify-content: center;
             gap: 0.5rem;
             margin-bottom: 1rem;
+        }
+        
+        /* Tab styles */
+        .tabs {
+            margin-bottom: 1.5rem;
+        }
+        
+        .tab-header {
+            display: flex;
+            border-bottom: 1px solid var(--gray);
+            margin-bottom: 1.5rem;
+        }
+        
+        .tab {
+            padding: 0.8rem 1.2rem;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--gray-dark);
+            border-bottom: 2px solid transparent;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .tab:hover {
+            color: var(--primary);
+        }
+        
+        .tab.active {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+        }
+        
+        .tab-content {
+            position: relative;
+        }
+        
+        .tab-pane {
+            display: none;
+        }
+        
+        .tab-pane.active {
+            display: block;
+        }
+        
+        /* YouTube styles */
+        .youtube-input-container {
+            padding: 2rem;
+            background-color: rgba(255, 0, 0, 0.05);
+            border: 2px dashed rgba(255, 0, 0, 0.3);
+            border-radius: var(--radius-sm);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .youtube-icon {
+            font-size: 3rem;
+            color: #FF0000;
+            margin-bottom: 1rem;
+        }
+        
+        .youtube-text {
+            margin-bottom: 1.5rem;
+        }
+        
+        .youtube-text h3 {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .youtube-text p {
+            color: var(--gray-dark);
+            font-size: 0.95rem;
+        }
+        
+        .youtube-input-wrapper {
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        .youtube-url-input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid var(--gray);
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+        
+        .youtube-url-input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2);
         }
         
         .format-badge {
@@ -431,32 +529,68 @@
                 <h2><i class="fas fa-microphone-alt"></i> Audio Transcriber</h2>
             </div>
             <div class="card-body">
-                <div id="upload-zone" class="upload-zone" onclick="document.getElementById('audio-file').click()">
-                    <input type="file" id="audio-file" accept="audio/wav,audio/mpeg,audio/x-aiff,.aiff,audio/aac,audio/ogg,audio/flac,.mp3,.wav,.aac,.ogg,.flac" class="hidden" />
-                    
-                    <div class="upload-icon">
-                        <i class="fas fa-cloud-upload-alt"></i>
+                <div class="tabs">
+                    <div class="tab-header">
+                        <div class="tab active" data-tab="upload-tab">
+                            <i class="fas fa-file-audio"></i> Upload Audio
+                        </div>
+                        <div class="tab" data-tab="youtube-tab">
+                            <i class="fab fa-youtube"></i> YouTube URL
+                        </div>
                     </div>
                     
-                    <div class="upload-text">
-                        <h3>Upload Audio File</h3>
-                        <p>Click or drag and drop your audio file here</p>
-                        <p class="file-limit">Maximum file size: 15MB</p>
-                    </div>
-                    
-                    <div class="format-badges">
-                        <span class="format-badge">WAV</span>
-                        <span class="format-badge">MP3</span>
-                        <span class="format-badge">AIFF</span>
-                        <span class="format-badge">AAC</span>
-                        <span class="format-badge">OGG</span>
-                        <span class="format-badge">FLAC</span>
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="upload-tab">
+                            <div id="upload-zone" class="upload-zone" onclick="document.getElementById('audio-file').click()">
+                                <input type="file" id="audio-file" accept="audio/wav,audio/mpeg,audio/x-aiff,.aiff,audio/aac,audio/ogg,audio/flac,.mp3,.wav,.aac,.ogg,.flac" class="hidden" />
+                                
+                                <div class="upload-icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </div>
+                                
+                                <div class="upload-text">
+                                    <h3>Upload Audio File</h3>
+                                    <p>Click or drag and drop your audio file here</p>
+                                    <p class="file-limit">Maximum file size: 15MB</p>
+                                </div>
+                                
+                                <div class="format-badges">
+                                    <span class="format-badge">WAV</span>
+                                    <span class="format-badge">MP3</span>
+                                    <span class="format-badge">AIFF</span>
+                                    <span class="format-badge">AAC</span>
+                                    <span class="format-badge">OGG</span>
+                                    <span class="format-badge">FLAC</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-pane" id="youtube-tab">
+                            <div class="youtube-input-container">
+                                <div class="youtube-icon">
+                                    <i class="fab fa-youtube"></i>
+                                </div>
+                                <div class="youtube-text">
+                                    <h3>Transcribe from YouTube</h3>
+                                    <p>Enter a YouTube video URL below</p>
+                                    <p class="file-limit">Maximum audio length: ~5-7 minutes (15MB)</p>
+                                </div>
+                                <div class="youtube-input-wrapper">
+                                    <input type="text" id="youtube-url" placeholder="https://www.youtube.com/watch?v=..." class="youtube-url-input" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
                 <div id="file-info" class="file-info hidden">
                     <i class="fas fa-file-audio"></i>
                     <span id="file-name"></span>
+                </div>
+                
+                <div id="youtube-info" class="file-info hidden">
+                    <i class="fab fa-youtube"></i>
+                    <span id="youtube-title">YouTube URL ready for transcription</span>
                 </div>
                 
                 <div class="options-container">
@@ -507,6 +641,26 @@
     </footer>
     
     <script>
+        // Fallback for DOMPurify if it fails to load
+        if (typeof DOMPurify === 'undefined') {
+            console.warn('DOMPurify not loaded, creating fallback');
+            // Simple fallback that escapes HTML
+            window.DOMPurify = {
+                sanitize: function(html, options) {
+                    // Basic HTML escaping
+                    const div = document.createElement('div');
+                    div.textContent = html;
+                    const escaped = div.innerHTML;
+                    
+                    // Only keep <br> and <span class="timestamp"> elements
+                    return escaped
+                        .replace(/&lt;br&gt;/g, '<br>')
+                        .replace(/&lt;span class="timestamp"&gt;(.*?)&lt;\/span&gt;/g, 
+                                '<span class="timestamp">$1</span>');
+                }
+            };
+        }
+        
         const audioFileInput = document.getElementById('audio-file');
         const transcribeButton = document.getElementById('transcribe-button');
         const fileInfo = document.getElementById('file-info');
@@ -517,11 +671,20 @@
         const transcriptContent = document.getElementById('transcript-content');
         const transcriptStatus = document.getElementById('transcript-status');
         
+        // YouTube elements
+        const youtubeUrlInput = document.getElementById('youtube-url');
+        const youtubeInfo = document.getElementById('youtube-info');
+        const youtubeTitle = document.getElementById('youtube-title');
+        
         // Setup drag and drop
         const uploadZone = document.getElementById('upload-zone');
         const copyButton = document.getElementById('copy-button');
         const newButton = document.getElementById('new-button');
         const timestampToggle = document.getElementById('timestamp-toggle');
+        
+        // Tab navigation
+        const tabs = document.querySelectorAll('.tab');
+        const tabPanes = document.querySelectorAll('.tab-pane');
         
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
             uploadZone.addEventListener(eventName, preventDefaults, false);
@@ -594,66 +757,141 @@
         
         // Handle transcription (combined upload and transcribe)
         transcribeButton.addEventListener('click', async function() {
-            const file = audioFileInput.files[0];
-            if (!file) return;
+            // Determine if we're using file upload or YouTube URL based on active tab
+            const activeTab = document.querySelector('.tab.active').getAttribute('data-tab');
+            const isYoutubeMode = activeTab === 'youtube-tab';
             
-            // Step 1: Upload file
+            // Reset UI state
             transcribeButton.disabled = true;
-            transcribeButton.innerHTML = '<span class="spinner"></span> Uploading...';
-            uploadStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Uploading file...';
-            uploadStatus.classList.remove('hidden');
             errorMessage.classList.add('hidden');
             
-            const formData = new FormData();
-            formData.append('audio', file);
-            
-            try {
+            if (isYoutubeMode) {
+                // YouTube URL transcription
+                const youtubeUrl = youtubeUrlInput.value.trim();
+                if (!youtubeUrl) return;
+                
+                // Prepare UI for transcription
+                transcribeButton.innerHTML = '<span class="spinner"></span> Processing...';
+                uploadStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Fetching YouTube audio...';
+                uploadStatus.classList.remove('hidden');
+                
+                try {
+                    // Call YouTube transcription endpoint
+                    const transcribeResponse = await fetch('/transcribe_youtube', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            youtube_url: youtubeUrl,
+                            include_timestamps: timestampToggle.checked 
+                        })
+                    });
+                    
+                    const transcribeData = await transcribeResponse.json();
+                    
+                    if (transcribeResponse.ok) {
+                        // Format transcript with timestamps and line breaks
+                        const formattedHtml = formatTranscript(transcribeData.transcript);
+                        
+                        // Sanitize HTML before inserting into DOM
+                        const sanitizedHtml = DOMPurify.sanitize(formattedHtml, { 
+                            USE_PROFILES: { html: true }, 
+                            ALLOWED_TAGS: ['br', 'span'], 
+                            ALLOWED_ATTR: ['class'] 
+                        });
+                        
+                        transcriptContent.innerHTML = sanitizedHtml;
+                        uploadStatus.innerHTML = '<i class="fas fa-check-circle"></i> Transcription complete!';
+                        transcribeButton.innerHTML = '<i class="fas fa-check"></i> Transcribed';
+                        transcriptStatus.classList.remove('hidden');
+                        copyButton.disabled = false;
+                        
+                        // Update YouTube title if available - sanitize title as well
+                        if (transcribeData.title) {
+                            youtubeTitle.textContent = transcribeData.title;
+                        }
+                    } else {
+                        throw new Error(transcribeData.error || 'Transcription failed');
+                    }
+                } catch (error) {
+                    uploadStatus.classList.add('hidden');
+                    errorText.textContent = error.message;
+                    errorMessage.classList.remove('hidden');
+                    transcribeButton.innerHTML = '<i class="fas fa-language"></i> Transcribe';
+                    transcribeButton.disabled = false;
+                }
+            } else {
+                // File upload transcription
+                const file = audioFileInput.files[0];
+                if (!file) return;
+                
                 // Step 1: Upload file
-                const uploadResponse = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
+                transcribeButton.innerHTML = '<span class="spinner"></span> Uploading...';
+                uploadStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Uploading file...';
+                uploadStatus.classList.remove('hidden');
                 
-                const uploadData = await uploadResponse.json();
+                const formData = new FormData();
+                formData.append('audio', file);
                 
-                if (!uploadResponse.ok) {
-                    throw new Error(uploadData.error || 'Upload failed');
+                try {
+                    // Step 1: Upload file
+                    const uploadResponse = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const uploadData = await uploadResponse.json();
+                    
+                    if (!uploadResponse.ok) {
+                        throw new Error(uploadData.error || 'Upload failed');
+                    }
+                    
+                    const fileId = uploadData.file_id;
+                    
+                    // Step 2: Transcribe file
+                    uploadStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Transcribing audio...';
+                    transcribeButton.innerHTML = '<span class="spinner"></span> Transcribing...';
+                    
+                    const transcribeResponse = await fetch('/transcribe', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            file_id: fileId,
+                            include_timestamps: timestampToggle.checked 
+                        })
+                    });
+                    
+                    const transcribeData = await transcribeResponse.json();
+                    
+                    if (transcribeResponse.ok) {
+                        // Format transcript with timestamps and line breaks
+                        const formattedHtml = formatTranscript(transcribeData.transcript);
+                        
+                        // Sanitize HTML before inserting into DOM
+                        const sanitizedHtml = DOMPurify.sanitize(formattedHtml, { 
+                            USE_PROFILES: { html: true }, 
+                            ALLOWED_TAGS: ['br', 'span'], 
+                            ALLOWED_ATTR: ['class'] 
+                        });
+                        
+                        transcriptContent.innerHTML = sanitizedHtml;
+                        uploadStatus.innerHTML = '<i class="fas fa-check-circle"></i> Transcription complete!';
+                        transcribeButton.innerHTML = '<i class="fas fa-check"></i> Transcribed';
+                        transcriptStatus.classList.remove('hidden');
+                        copyButton.disabled = false;
+                    } else {
+                        throw new Error(transcribeData.error || 'Transcription failed');
+                    }
+                } catch (error) {
+                    uploadStatus.classList.add('hidden');
+                    errorText.textContent = error.message;
+                    errorMessage.classList.remove('hidden');
+                    transcribeButton.innerHTML = '<i class="fas fa-language"></i> Transcribe';
+                    transcribeButton.disabled = false;
                 }
-                
-                const tempPath = uploadData.temp_path;
-                
-                // Step 2: Transcribe file
-                uploadStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Transcribing audio...';
-                transcribeButton.innerHTML = '<span class="spinner"></span> Transcribing...';
-                
-                const transcribeResponse = await fetch('/transcribe', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        temp_path: tempPath,
-                        include_timestamps: timestampToggle.checked 
-                    })
-                });
-                
-                const transcribeData = await transcribeResponse.json();
-                
-                if (transcribeResponse.ok) {
-                    transcriptContent.innerHTML = formatTranscript(transcribeData.transcript);
-                    uploadStatus.innerHTML = '<i class="fas fa-check-circle"></i> Transcription complete!';
-                    transcribeButton.innerHTML = '<i class="fas fa-check"></i> Transcribed';
-                    transcriptStatus.classList.remove('hidden');
-                    copyButton.disabled = false;
-                } else {
-                    throw new Error(transcribeData.error || 'Transcription failed');
-                }
-            } catch (error) {
-                uploadStatus.classList.add('hidden');
-                errorText.textContent = error.message;
-                errorMessage.classList.remove('hidden');
-                transcribeButton.innerHTML = '<i class="fas fa-language"></i> Transcribe';
-                transcribeButton.disabled = false;
             }
         });
         
@@ -677,6 +915,64 @@
             // Replace new lines with <br> tags
             return formattedText.replace(/\n/g, '<br>');
         }
+        
+        // Tab switching functionality
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Hide all tab panes
+                tabPanes.forEach(pane => pane.classList.remove('active'));
+                
+                // Show the corresponding tab pane
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+                
+                // Reset UI state when switching tabs
+                resetUIState();
+                
+                // Enable or disable transcribe button based on active tab
+                if (tabId === 'youtube-tab') {
+                    transcribeButton.disabled = !youtubeUrlInput.value.trim();
+                    fileInfo.classList.add('hidden');
+                    if (youtubeUrlInput.value.trim()) {
+                        youtubeInfo.classList.remove('hidden');
+                    }
+                } else {
+                    transcribeButton.disabled = !audioFileInput.files.length;
+                    youtubeInfo.classList.add('hidden');
+                }
+            });
+        });
+        
+        // Handle YouTube URL input
+        youtubeUrlInput.addEventListener('input', function() {
+            const youtubeUrl = this.value.trim();
+            
+            // Simple YouTube URL validation
+            const youtubePattern = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]{11}.*$/;
+            const isValidUrl = youtubePattern.test(youtubeUrl);
+            
+            if (isValidUrl) {
+                youtubeInfo.classList.remove('hidden');
+                transcribeButton.disabled = false;
+                errorMessage.classList.add('hidden');
+            } else {
+                youtubeInfo.classList.add('hidden');
+                transcribeButton.disabled = !youtubeUrl;
+                
+                if (youtubeUrl && !isValidUrl) {
+                    errorText.textContent = 'Invalid YouTube URL format. Use https://youtube.com/watch?v=... or https://youtu.be/...';
+                    errorMessage.classList.remove('hidden');
+                } else {
+                    errorMessage.classList.add('hidden');
+                }
+            }
+        });
         
         // Copy transcript to clipboard
         copyButton.addEventListener('click', function() {
@@ -711,7 +1007,16 @@
             if (transcriptContent.innerHTML && !transcriptContent.innerHTML.includes('placeholder-text')) {
                 const currentText = transcriptContent.innerText;
                 // On toggle change, we need to re-apply formatting to show/hide timestamps
-                transcriptContent.innerHTML = formatTranscript(currentText);
+                const formattedHtml = formatTranscript(currentText);
+                
+                // Sanitize HTML before inserting into DOM
+                const sanitizedHtml = DOMPurify.sanitize(formattedHtml, { 
+                    USE_PROFILES: { html: true }, 
+                    ALLOWED_TAGS: ['br', 'span'], 
+                    ALLOWED_ATTR: ['class'] 
+                });
+                
+                transcriptContent.innerHTML = sanitizedHtml;
             }
         });
         
@@ -726,8 +1031,12 @@
             // Reset file input
             audioFileInput.value = '';
             
+            // Reset YouTube input
+            // Don't reset youtubeUrlInput.value to preserve user input when switching tabs
+            
             // Reset UI elements
             fileInfo.classList.add('hidden');
+            youtubeInfo.classList.add('hidden');
             uploadStatus.classList.add('hidden');
             errorMessage.classList.add('hidden');
             transcriptStatus.classList.add('hidden');
@@ -738,7 +1047,17 @@
             copyButton.disabled = true;
             
             // Reset transcript
-            transcriptContent.innerHTML = '<span class="placeholder-text">No transcript yet. Select an audio file and click "Transcribe".</span>';
+            transcriptContent.innerHTML = '<span class="placeholder-text">No transcript yet. Select an audio file or enter a YouTube URL and click "Transcribe".</span>';
+            
+            // Check current tab and re-enable button if needed
+            const activeTab = document.querySelector('.tab.active').getAttribute('data-tab');
+            if (activeTab === 'youtube-tab' && youtubeUrlInput.value.trim()) {
+                transcribeButton.disabled = false;
+                youtubeInfo.classList.remove('hidden');
+            } else if (activeTab === 'upload-tab' && audioFileInput.files.length) {
+                transcribeButton.disabled = false;
+                fileInfo.classList.remove('hidden');
+            }
         }
     </script>
 </body>
