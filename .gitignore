@@ -176,9 +176,6 @@ cython_debug/
 # mp3 files
 *.mp3
 
-# txt files
-*.txt
-
 # local files
 CLAUDE.md
 python_packages_update.sh

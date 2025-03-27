@@ -1,0 +1,7 @@
+flask==3.1.0
+flask_cors==5.0.1
+google-genai==1.8.0
+tenacity==9.0.0
+python-dotenv==1.1.0
+gunicorn==23.0.0
+yt-dlp==2025.3.26
