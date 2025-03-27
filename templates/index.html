@@ -6,6 +6,8 @@
     <title>VoxLogAI - Audio Transcriber</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- DOMPurify for HTML sanitization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.8/purify.min.js"></script>
     <style>
         :root {
             --primary: #2e7d32;
@@ -639,6 +641,26 @@
     </footer>
     
     <script>
+        // Fallback for DOMPurify if it fails to load
+        if (typeof DOMPurify === 'undefined') {
+            console.warn('DOMPurify not loaded, creating fallback');
+            // Simple fallback that escapes HTML
+            window.DOMPurify = {
+                sanitize: function(html, options) {
+                    // Basic HTML escaping
+                    const div = document.createElement('div');
+                    div.textContent = html;
+                    const escaped = div.innerHTML;
+                    
+                    // Only keep <br> and <span class="timestamp"> elements
+                    return escaped
+                        .replace(/&lt;br&gt;/g, '<br>')
+                        .replace(/&lt;span class="timestamp"&gt;(.*?)&lt;\/span&gt;/g, 
+                                '<span class="timestamp">$1</span>');
+                }
+            };
+        }
+        
         const audioFileInput = document.getElementById('audio-file');
         const transcribeButton = document.getElementById('transcribe-button');
         const fileInfo = document.getElementById('file-info');
@@ -769,13 +791,23 @@
                     const transcribeData = await transcribeResponse.json();
                     
                     if (transcribeResponse.ok) {
-                        transcriptContent.innerHTML = formatTranscript(transcribeData.transcript);
+                        // Format transcript with timestamps and line breaks
+                        const formattedHtml = formatTranscript(transcribeData.transcript);
+                        
+                        // Sanitize HTML before inserting into DOM
+                        const sanitizedHtml = DOMPurify.sanitize(formattedHtml, { 
+                            USE_PROFILES: { html: true }, 
+                            ALLOWED_TAGS: ['br', 'span'], 
+                            ALLOWED_ATTR: ['class'] 
+                        });
+                        
+                        transcriptContent.innerHTML = sanitizedHtml;
                         uploadStatus.innerHTML = '<i class="fas fa-check-circle"></i> Transcription complete!';
                         transcribeButton.innerHTML = '<i class="fas fa-check"></i> Transcribed';
                         transcriptStatus.classList.remove('hidden');
                         copyButton.disabled = false;
                         
-                        // Update YouTube title if available
+                        // Update YouTube title if available - sanitize title as well
                         if (transcribeData.title) {
                             youtubeTitle.textContent = transcribeData.title;
                         }
@@ -815,7 +847,7 @@
                         throw new Error(uploadData.error || 'Upload failed');
                     }
                     
-                    const tempPath = uploadData.temp_path;
+                    const fileId = uploadData.file_id;
                     
                     // Step 2: Transcribe file
                     uploadStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Transcribing audio...';
@@ -827,7 +859,7 @@
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({ 
-                            temp_path: tempPath,
+                            file_id: fileId,
                             include_timestamps: timestampToggle.checked 
                         })
                     });
@@ -835,7 +867,17 @@
                     const transcribeData = await transcribeResponse.json();
                     
                     if (transcribeResponse.ok) {
-                        transcriptContent.innerHTML = formatTranscript(transcribeData.transcript);
+                        // Format transcript with timestamps and line breaks
+                        const formattedHtml = formatTranscript(transcribeData.transcript);
+                        
+                        // Sanitize HTML before inserting into DOM
+                        const sanitizedHtml = DOMPurify.sanitize(formattedHtml, { 
+                            USE_PROFILES: { html: true }, 
+                            ALLOWED_TAGS: ['br', 'span'], 
+                            ALLOWED_ATTR: ['class'] 
+                        });
+                        
+                        transcriptContent.innerHTML = sanitizedHtml;
                         uploadStatus.innerHTML = '<i class="fas fa-check-circle"></i> Transcription complete!';
                         transcribeButton.innerHTML = '<i class="fas fa-check"></i> Transcribed';
                         transcriptStatus.classList.remove('hidden');
@@ -965,7 +1007,16 @@
             if (transcriptContent.innerHTML && !transcriptContent.innerHTML.includes('placeholder-text')) {
                 const currentText = transcriptContent.innerText;
                 // On toggle change, we need to re-apply formatting to show/hide timestamps
-                transcriptContent.innerHTML = formatTranscript(currentText);
+                const formattedHtml = formatTranscript(currentText);
+                
+                // Sanitize HTML before inserting into DOM
+                const sanitizedHtml = DOMPurify.sanitize(formattedHtml, { 
+                    USE_PROFILES: { html: true }, 
+                    ALLOWED_TAGS: ['br', 'span'], 
+                    ALLOWED_ATTR: ['class'] 
+                });
+                
+                transcriptContent.innerHTML = sanitizedHtml;
             }
         });
         

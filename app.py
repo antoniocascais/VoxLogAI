@@ -6,6 +6,8 @@ import logging
 import sys
 import re
 import yt_dlp
+import uuid
+import time
 from dotenv import load_dotenv
 from transcriber import transcribe_audio
 
@@ -19,6 +21,10 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger(__name__)
+
+# Dictionary to store mapping between file_id and actual file path
+# Format: {file_id: {"path": file_path, "timestamp": creation_time}}
+temp_file_map = {}
 
 app = Flask(__name__)
 CORS(app)
@@ -57,19 +63,65 @@ def upload_file():
         file.save(temp_file.name)
         temp_file.close()
         
-        logger.info(f"File uploaded successfully: {file.filename}")
-        return jsonify({'success': True, 'temp_path': temp_file.name}), 200
+        # Generate a secure unique ID for this file
+        file_id = str(uuid.uuid4())
+        
+        # Store the mapping between ID and actual path
+        temp_file_map[file_id] = {
+            "path": temp_file.name, 
+            "timestamp": time.time()
+        }
+        
+        # Clean up old temp files
+        cleanup_temp_files()
+        
+        logger.info(f"File uploaded successfully: {file.filename}, assigned ID: {file_id}")
+        return jsonify({'success': True, 'file_id': file_id}), 200
     except Exception as e:
         logger.error(f"Error uploading file: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+# Function to clean up old temporary files
+def cleanup_temp_files():
+    """Remove mapping entries older than 30 minutes and delete their associated files"""
+    current_time = time.time()
+    expired_time = current_time - (30 * 60)  # 30 minutes in seconds
+    
+    # Find expired entries
+    expired_ids = [file_id for file_id, data in temp_file_map.items() 
+                if data["timestamp"] < expired_time]
+    
+    # Delete expired files and remove from map
+    for file_id in expired_ids:
+        try:
+            file_path = temp_file_map[file_id]["path"]
+            if os.path.exists(file_path):
+                os.unlink(file_path)
+                logger.info(f"Deleted expired temp file: {file_path}")
+            del temp_file_map[file_id]
+            logger.info(f"Removed expired file_id: {file_id}")
+        except Exception as e:
+            logger.warning(f"Error cleaning up file_id {file_id}: {str(e)}")
+
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
     data = request.json
-    temp_path = data.get('temp_path')
+    file_id = data.get('file_id')
     
-    if not temp_path:
-        return jsonify({'error': 'No file path provided'}), 400
+    if not file_id:
+        return jsonify({'error': 'No file ID provided'}), 400
+    
+    # Look up the actual file path using the provided ID
+    if file_id not in temp_file_map:
+        return jsonify({'error': 'Invalid or expired file ID'}), 400
+    
+    temp_path = temp_file_map[file_id]["path"]
+    
+    # Validate that the temporary path is within the expected temporary directory
+    expected_temp_dir = tempfile.gettempdir()
+    if not os.path.abspath(temp_path).startswith(os.path.abspath(expected_temp_dir)):
+        logger.error(f"Security violation: temp_path {temp_path} is outside of expected temp directory {expected_temp_dir}")
+        return jsonify({'error': 'Security violation detected'}), 400
     
     try:
         # Get timestamp preference from request
@@ -83,6 +135,9 @@ def transcribe():
         # Delete the temporary file after processing
         try:
             os.unlink(temp_path)
+            # Remove from our mapping after successful processing
+            del temp_file_map[file_id]
+            logger.info(f"Deleted temp file and removed mapping for {file_id}")
         except Exception as e:
             logger.warning(f"Could not delete temp file: {str(e)}")
         
