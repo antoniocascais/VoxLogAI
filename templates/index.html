@@ -250,6 +250,10 @@
             outline: none;
             box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2);
         }
+
+        .youtube-text p.small-text {
+            font-size: 0.65em;
+        }
         
         .format-badge {
             background-color: rgba(46, 125, 50, 0.1);
@@ -489,6 +493,25 @@
             opacity: 0.8;
             font-size: 0.9rem;
         }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem; /* Space between icons */
+            justify-content: center; /* Centers the icons horizontally */
+        }
+
+        .footer-links a {
+            color: var(--text-light); /* Use light color for dark background */
+            text-decoration: none;
+            font-size: 1.5rem; /* Make icons a bit larger */
+            opacity: 0.7; /* Slightly dimmed */
+            transition: var(--transition);
+        }
+
+        .footer-links a:hover {
+            opacity: 1; /* Full opacity on hover */
+            transform: scale(1.1); /* Slight zoom effect */
+        }
         
         @media (max-width: 768px) {
             .hero {
@@ -520,7 +543,7 @@
 <body>
     <div class="hero">
         <h1>VoxLogAI</h1>
-        <p>AI-powered audio transcription for your voice recordings</p>
+        <p>Transcribe audio files & YouTube videos with AI.</p>
     </div>
     
     <div class="container">
@@ -573,7 +596,8 @@
                                 <div class="youtube-text">
                                     <h3>Transcribe from YouTube</h3>
                                     <p>Enter a YouTube video URL below</p>
-                                    <p class="file-limit">Maximum audio length: ~5-7 minutes (15MB)</p>
+                                    <p class="file-limit">Maximum audio length: ~10-15 minutes (15MB)</p>
+                                    <p class="small-text">Please note that longer videos might take a while to transcribe</p>
                                 </div>
                                 <div class="youtube-input-wrapper">
                                     <input type="text" id="youtube-url" placeholder="https://www.youtube.com/watch?v=..." class="youtube-url-input" />
@@ -638,6 +662,15 @@
     
     <footer>
         <p>© 2025 VoxLogAI - Privacy-focused audio transcription</p>
+
+        <div class="footer-links">
+            <a href="https://github.com/antoniocascais/VoxLogAI" target="_blank" rel="noopener noreferrer" aria-label="View source code on GitHub" title="View source code on GitHub">
+                <i class="fab fa-github"></i>
+            </a>
+            <a href="mailto:contact.voxlogai@acascais.com" aria-label="Contact via Email" title="Contact via Email">
+                <i class="fas fa-envelope"></i>
+            </a>
+        </div>
     </footer>
     
     <script>
