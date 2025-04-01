@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxLogAI - Audio Transcriber</title>
+    <title>VoxLogAI - Transcription & OCR</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- DOMPurify for HTML sanitization -->
@@ -155,6 +155,40 @@
             margin-bottom: 1rem;
         }
         
+        /* Mode Selector */
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            padding: 0.5rem;
+            background-color: var(--gray-light);
+            border-radius: var(--radius-sm);
+        }
+        
+        .mode-option {
+            padding: 0.8rem 1.2rem;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--gray-dark);
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+            justify-content: center;
+            max-width: 250px;
+        }
+        
+        .mode-option:hover {
+            background-color: var(--gray);
+        }
+        
+        .mode-option.active {
+            color: white;
+            background-color: var(--primary);
+        }
+        
         /* Tab styles */
         .tabs {
             margin-bottom: 1.5rem;
@@ -197,6 +231,44 @@
         
         .tab-pane.active {
             display: block;
+        }
+        
+        /* Image upload styles */
+        .image-upload-container {
+            padding: 2rem;
+            background-color: rgba(0, 128, 128, 0.05);
+            border: 2px dashed rgba(0, 128, 128, 0.3);
+            border-radius: var(--radius-sm);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+        }
+        
+        .image-icon {
+            font-size: 3rem;
+            color: teal;
+            margin-bottom: 1rem;
+        }
+        
+        /* PDF upload styles */
+        .pdf-upload-container {
+            padding: 2rem;
+            background-color: rgba(220, 53, 69, 0.05);
+            border: 2px dashed rgba(220, 53, 69, 0.3);
+            border-radius: var(--radius-sm);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+        }
+        
+        .pdf-icon {
+            font-size: 3rem;
+            color: #dc3545;
+            margin-bottom: 1rem;
         }
         
         /* YouTube styles */
@@ -331,7 +403,7 @@
             gap: 0.5rem;
         }
         
-        .transcript-container {
+        .result-container {
             background-color: white;
             border-radius: var(--radius);
             padding: 0;
@@ -339,7 +411,7 @@
             overflow: hidden;
         }
         
-        .transcript-header {
+        .result-header {
             background-color: var(--primary);
             color: white;
             padding: 1rem 1.5rem;
@@ -348,7 +420,7 @@
             align-items: center;
         }
         
-        .transcript-header h2 {
+        .result-header h2 {
             font-size: 1.2rem;
             margin: 0;
             display: flex;
@@ -356,7 +428,7 @@
             gap: 0.5rem;
         }
         
-        .transcript-actions {
+        .result-actions {
             display: flex;
             align-items: center;
             gap: 1rem;
@@ -410,7 +482,7 @@
             100% { opacity: 0; }
         }
         
-        .transcript-content {
+        .result-content {
             padding: 1.5rem;
             min-height: 300px;
             line-height: 1.8;
@@ -534,7 +606,7 @@
                 width: 100%;
             }
             
-            .transcript-content {
+            .result-content {
                 min-height: 200px;
             }
         }
@@ -543,17 +615,28 @@
 <body>
     <div class="hero">
         <h1>VoxLogAI</h1>
-        <p>Transcribe audio files & YouTube videos with AI.</p>
+        <p>Transcribe audio, videos & extract text from images and PDFs with AI.</p>
     </div>
     
     <div class="container">
         <div class="card">
             <div class="card-header">
-                <h2><i class="fas fa-microphone-alt"></i> Audio Transcriber</h2>
+                <h2 id="card-title"><i class="fas fa-microphone-alt"></i> Audio Transcriber</h2>
             </div>
             <div class="card-body">
+                <!-- Mode Selector -->
+                <div class="mode-selector">
+                    <div class="mode-option active" data-mode="audio-video">
+                        <i class="fas fa-headphones"></i> Audio/Video Transcription
+                    </div>
+                    <div class="mode-option" data-mode="document-ocr">
+                        <i class="fas fa-file-alt"></i> Text from Image/PDF
+                    </div>
+                </div>
+
                 <div class="tabs">
-                    <div class="tab-header">
+                    <!-- Audio/Video Tabs -->
+                    <div class="tab-header audio-video-tabs">
                         <div class="tab active" data-tab="upload-tab">
                             <i class="fas fa-file-audio"></i> Upload Audio
                         </div>
@@ -562,7 +645,18 @@
                         </div>
                     </div>
                     
+                    <!-- OCR Tabs -->
+                    <div class="tab-header document-ocr-tabs hidden">
+                        <div class="tab active" data-tab="image-tab">
+                            <i class="fas fa-file-image"></i> Upload Image
+                        </div>
+                        <div class="tab" data-tab="pdf-tab">
+                            <i class="fas fa-file-pdf"></i> Upload PDF
+                        </div>
+                    </div>
+                    
                     <div class="tab-content">
+                        <!-- Audio/Video Content -->
                         <div class="tab-pane active" id="upload-tab">
                             <div id="upload-zone" class="upload-zone" onclick="document.getElementById('audio-file').click()">
                                 <input type="file" id="audio-file" accept="audio/wav,audio/mpeg,audio/x-aiff,.aiff,audio/aac,audio/ogg,audio/flac,.mp3,.wav,.aac,.ogg,.flac" class="hidden" />
@@ -604,9 +698,54 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- OCR Content -->
+                        <div class="tab-pane" id="image-tab">
+                            <div id="image-upload-zone" class="image-upload-container" onclick="document.getElementById('image-file').click()">
+                                <input type="file" id="image-file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic,.heif" class="hidden" />
+                                
+                                <div class="image-icon">
+                                    <i class="fas fa-file-image"></i>
+                                </div>
+                                
+                                <div class="upload-text">
+                                    <h3>Upload Image File</h3>
+                                    <p>Click or drag and drop your image file here</p>
+                                    <p class="file-limit">Maximum file size: 20MB</p>
+                                </div>
+                                
+                                <div class="format-badges">
+                                    <span class="format-badge">JPG</span>
+                                    <span class="format-badge">PNG</span>
+                                    <span class="format-badge">WEBP</span>
+                                    <span class="format-badge">HEIC</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-pane" id="pdf-tab">
+                            <div id="pdf-upload-zone" class="pdf-upload-container" onclick="document.getElementById('pdf-file').click()">
+                                <input type="file" id="pdf-file" accept="application/pdf,.pdf" class="hidden" />
+                                
+                                <div class="pdf-icon">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                
+                                <div class="upload-text">
+                                    <h3>Upload PDF File</h3>
+                                    <p>Click or drag and drop your PDF file here</p>
+                                    <p class="file-limit">Maximum file size: 20MB</p>
+                                </div>
+                                
+                                <div class="format-badges">
+                                    <span class="format-badge">PDF</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
+                <!-- File Info Elements -->
                 <div id="file-info" class="file-info hidden">
                     <i class="fas fa-file-audio"></i>
                     <span id="file-name"></span>
@@ -617,7 +756,17 @@
                     <span id="youtube-title">YouTube URL ready for transcription</span>
                 </div>
                 
-                <div class="options-container">
+                <div id="image-info" class="file-info hidden">
+                    <i class="fas fa-file-image"></i>
+                    <span id="image-name"></span>
+                </div>
+                
+                <div id="pdf-info" class="file-info hidden">
+                    <i class="fas fa-file-pdf"></i>
+                    <span id="pdf-name"></span>
+                </div>
+                
+                <div class="options-container" id="timestamp-container">
                     <label class="toggle-option">
                         <input type="checkbox" id="timestamp-toggle" checked>
                         <span class="toggle-label">Include timestamps</span>
@@ -625,7 +774,7 @@
                 </div>
                 
                 <div class="buttons">
-                    <button id="transcribe-button" disabled>
+                    <button id="action-button" disabled>
                         <i class="fas fa-language"></i>
                         Transcribe
                     </button>
@@ -639,29 +788,29 @@
             </div>
         </div>
         
-        <div class="transcript-container">
-            <div class="transcript-header">
-                <h2><i class="fas fa-file-alt"></i> Transcript</h2>
-                <div class="transcript-actions">
-                    <button id="new-button" class="action-button" title="Start new transcription">
+        <div class="result-container">
+            <div class="result-header">
+                <h2 id="result-title"><i class="fas fa-file-alt"></i> Result</h2>
+                <div class="result-actions">
+                    <button id="new-button" class="action-button" title="Start new process">
                         <i class="fas fa-plus"></i>
                     </button>
                     <button id="copy-button" class="action-button" title="Copy to clipboard" disabled>
                         <i class="fas fa-copy"></i>
                     </button>
-                    <div id="transcript-status" class="hidden">
+                    <div id="result-status" class="hidden">
                         <i class="fas fa-check-circle"></i>
                     </div>
                 </div>
             </div>
-            <div id="transcript-content" class="transcript-content">
-                <span class="placeholder-text">No transcript yet. Select an audio file and click "Transcribe".</span>
+            <div id="result-content" class="result-content">
+                <span class="placeholder-text">No content yet. Select a file or URL and click the action button.</span>
             </div>
         </div>
     </div>
     
     <footer>
-        <p>© 2025 VoxLogAI - Privacy-focused audio transcription</p>
+        <p>© 2025 VoxLogAI - Privacy-focused audio transcription and OCR</p>
 
         <div class="footer-links">
             <a href="https://github.com/antoniocascais/VoxLogAI" target="_blank" rel="noopener noreferrer" aria-label="View source code on GitHub" title="View source code on GitHub">
@@ -694,236 +843,467 @@
             };
         }
         
-        const audioFileInput = document.getElementById('audio-file');
-        const transcribeButton = document.getElementById('transcribe-button');
-        const fileInfo = document.getElementById('file-info');
-        const fileName = document.getElementById('file-name');
+        // Set the current mode
+        let currentMode = 'audio-video';
+        
+        // Common elements
+        const actionButton = document.getElementById('action-button');
         const uploadStatus = document.getElementById('upload-status');
         const errorMessage = document.getElementById('error-message');
         const errorText = document.getElementById('error-text');
-        const transcriptContent = document.getElementById('transcript-content');
-        const transcriptStatus = document.getElementById('transcript-status');
-        
-        // YouTube elements
-        const youtubeUrlInput = document.getElementById('youtube-url');
-        const youtubeInfo = document.getElementById('youtube-info');
-        const youtubeTitle = document.getElementById('youtube-title');
-        
-        // Setup drag and drop
-        const uploadZone = document.getElementById('upload-zone');
+        const resultContent = document.getElementById('result-content');
+        const resultStatus = document.getElementById('result-status');
         const copyButton = document.getElementById('copy-button');
         const newButton = document.getElementById('new-button');
         const timestampToggle = document.getElementById('timestamp-toggle');
+        const timestampContainer = document.getElementById('timestamp-container');
+        const cardTitle = document.getElementById('card-title');
+        const resultTitle = document.getElementById('result-title');
         
-        // Tab navigation
-        const tabs = document.querySelectorAll('.tab');
-        const tabPanes = document.querySelectorAll('.tab-pane');
+        // Audio/Video elements
+        const audioFileInput = document.getElementById('audio-file');
+        const fileInfo = document.getElementById('file-info');
+        const fileName = document.getElementById('file-name');
+        const youtubeUrlInput = document.getElementById('youtube-url');
+        const youtubeInfo = document.getElementById('youtube-info');
+        const youtubeTitle = document.getElementById('youtube-title');
+        const uploadZone = document.getElementById('upload-zone');
         
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            uploadZone.addEventListener(eventName, preventDefaults, false);
-        });
+        // OCR elements
+        const imageFileInput = document.getElementById('image-file');
+        const imageInfo = document.getElementById('image-info');
+        const imageName = document.getElementById('image-name');
+        const imageUploadZone = document.getElementById('image-upload-zone');
         
+        const pdfFileInput = document.getElementById('pdf-file');
+        const pdfInfo = document.getElementById('pdf-info');
+        const pdfName = document.getElementById('pdf-name');
+        const pdfUploadZone = document.getElementById('pdf-upload-zone');
+        
+        // Mode selector and tabs
+        const modeOptions = document.querySelectorAll('.mode-option');
+        const audioVideoTabs = document.querySelector('.audio-video-tabs');
+        const documentOcrTabs = document.querySelector('.document-ocr-tabs');
+        
+        // Helper function to prevent defaults for drag and drop
         function preventDefaults(e) {
             e.preventDefault();
             e.stopPropagation();
         }
         
-        ['dragenter', 'dragover'].forEach(eventName => {
-            uploadZone.addEventListener(eventName, highlight, false);
-        });
-        
-        ['dragleave', 'drop'].forEach(eventName => {
-            uploadZone.addEventListener(eventName, unhighlight, false);
-        });
-        
-        function highlight() {
-            uploadZone.style.backgroundColor = 'rgba(96, 173, 94, 0.2)';
-            uploadZone.style.borderColor = '#2e7d32';
-        }
-        
-        function unhighlight() {
-            uploadZone.style.backgroundColor = '';
-            uploadZone.style.borderColor = '';
-        }
-        
-        uploadZone.addEventListener('drop', handleDrop, false);
-        
-        function handleDrop(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
+        // Helper function to set up drag and drop for an element
+        function setupDragAndDrop(dropZone, fileInput, highlightColor, borderColor) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
             
-            if (files.length) {
-                audioFileInput.files = files;
-                handleFileSelect({ target: { files } });
-            }
-        }
-        
-        // Handle file selection
-        audioFileInput.addEventListener('change', handleFileSelect);
-        
-        function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if (file) {
-                // Check file size (15MB limit)
-                const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB in bytes
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.style.backgroundColor = highlightColor;
+                    dropZone.style.borderColor = borderColor;
+                }, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.style.backgroundColor = '';
+                    dropZone.style.borderColor = '';
+                }, false);
+            });
+            
+            dropZone.addEventListener('drop', e => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
                 
-                if (file.size > MAX_FILE_SIZE) {
-                    fileName.textContent = `${file.name} (${formatFileSize(file.size)})`;
-                    fileInfo.classList.remove('hidden');
-                    transcribeButton.disabled = true;
-                    
-                    errorText.textContent = `File too large. Maximum size is 15MB. Your file is ${formatFileSize(file.size)}.`;
-                    errorMessage.classList.remove('hidden');
-                    return;
+                if (files.length) {
+                    fileInput.files = files;
+                    // Trigger the change event
+                    const event = new Event('change');
+                    fileInput.dispatchEvent(event);
                 }
+            }, false);
+        }
+        
+        // Helper function for handling file selection
+        function handleFileSelection(file, infoElement, nameElement, maxSizeMB, errorMessages = {}) {
+            if (!file) return false;
+            
+            // Set default error messages if not provided
+            const messages = {
+                tooLarge: `File too large. Maximum size is ${maxSizeMB}MB. Your file is ${formatFileSize(file.size)}.`,
+                placeholder: `No result yet. Click "${currentMode === 'audio-video' ? 'Transcribe' : 'Extract Text'}" to process your file.`,
+                ...errorMessages
+            };
+            
+            // Check file size
+            const MAX_FILE_SIZE = maxSizeMB * 1024 * 1024; // Convert MB to bytes
+            
+            if (file.size > MAX_FILE_SIZE) {
+                nameElement.textContent = `${file.name} (${formatFileSize(file.size)})`;
+                infoElement.classList.remove('hidden');
+                actionButton.disabled = true;
                 
-                fileName.textContent = `${file.name} (${formatFileSize(file.size)})`;
-                fileInfo.classList.remove('hidden');
-                transcribeButton.disabled = false;
-                
-                // Reset previous state
-                errorMessage.classList.add('hidden');
-                transcriptContent.innerHTML = '<span class="placeholder-text">No transcript yet. Click "Transcribe" to process your audio.</span>';
-                transcriptStatus.classList.add('hidden');
+                errorText.textContent = messages.tooLarge;
+                errorMessage.classList.remove('hidden');
+                return false;
+            }
+            
+            nameElement.textContent = `${file.name} (${formatFileSize(file.size)})`;
+            infoElement.classList.remove('hidden');
+            actionButton.disabled = false;
+            
+            // Reset previous state
+            errorMessage.classList.add('hidden');
+            resultContent.innerHTML = `<span class="placeholder-text">${messages.placeholder}</span>`;
+            resultStatus.classList.add('hidden');
+            
+            return true;
+        }
+        
+        // Setup drag and drop for all upload zones
+        setupDragAndDrop(uploadZone, audioFileInput, 'rgba(96, 173, 94, 0.2)', '#2e7d32');
+        setupDragAndDrop(imageUploadZone, imageFileInput, 'rgba(0, 128, 128, 0.1)', 'teal');
+        setupDragAndDrop(pdfUploadZone, pdfFileInput, 'rgba(220, 53, 69, 0.1)', '#dc3545');
+        
+        // Handle file selection events
+        audioFileInput.addEventListener('change', e => {
+            const file = e.target.files[0];
+            handleFileSelection(file, fileInfo, fileName, 15, {
+                placeholder: 'No transcript yet. Click "Transcribe" to process your audio.'
+            });
+        });
+        
+        imageFileInput.addEventListener('change', e => {
+            const file = e.target.files[0];
+            handleFileSelection(file, imageInfo, imageName, 20, {
+                placeholder: 'No result yet. Click "Extract Text" to process your image.'
+            });
+        });
+        
+        pdfFileInput.addEventListener('change', e => {
+            const file = e.target.files[0];
+            handleFileSelection(file, pdfInfo, pdfName, 20, {
+                placeholder: 'No result yet. Click "Extract Text" to process your PDF.'
+            });
+        });
+        
+        // Improved tab switching functionality
+        function setupTabNavigation(tabHeader) {
+            const tabs = tabHeader.querySelectorAll('.tab');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Only handle tabs within this tab header
+                    const siblingTabs = Array.from(tabHeader.querySelectorAll('.tab'));
+                    
+                    // Remove active class from sibling tabs
+                    siblingTabs.forEach(t => t.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    tab.classList.add('active');
+                    
+                    // Hide all tab panes
+                    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+                    
+                    // Show the corresponding tab pane
+                    const tabId = tab.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    // Reset UI state when switching tabs
+                    resetUIState();
+                    
+                    // Enable or disable action button based on active tab and current mode
+                    updateActionButtonState(tabId);
+                });
+            });
+        }
+        
+        // Setup tab navigation for both tab headers
+        setupTabNavigation(audioVideoTabs);
+        setupTabNavigation(documentOcrTabs);
+        
+        // Function to update action button state based on active tab
+        function updateActionButtonState(tabId) {
+            if (tabId === 'youtube-tab') {
+                actionButton.disabled = !youtubeUrlInput.value.trim();
+                fileInfo.classList.add('hidden');
+                if (youtubeUrlInput.value.trim()) {
+                    youtubeInfo.classList.remove('hidden');
+                }
+            } else if (tabId === 'upload-tab') {
+                actionButton.disabled = !audioFileInput.files.length;
+                youtubeInfo.classList.add('hidden');
+            } else if (tabId === 'image-tab') {
+                actionButton.disabled = !imageFileInput.files.length;
+                pdfInfo.classList.add('hidden');
+            } else if (tabId === 'pdf-tab') {
+                actionButton.disabled = !pdfFileInput.files.length;
+                imageInfo.classList.add('hidden');
             }
         }
         
-        // Handle transcription (combined upload and transcribe)
-        transcribeButton.addEventListener('click', async function() {
-            // Determine if we're using file upload or YouTube URL based on active tab
-            const activeTab = document.querySelector('.tab.active').getAttribute('data-tab');
-            const isYoutubeMode = activeTab === 'youtube-tab';
+        // Handle YouTube URL input
+        youtubeUrlInput.addEventListener('input', function() {
+            const youtubeUrl = this.value.trim();
             
+            // Simple YouTube URL validation
+            const youtubePattern = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]{11}.*$/;
+            const isValidUrl = youtubePattern.test(youtubeUrl);
+            
+            if (isValidUrl) {
+                youtubeInfo.classList.remove('hidden');
+                actionButton.disabled = false;
+                errorMessage.classList.add('hidden');
+            } else {
+                youtubeInfo.classList.add('hidden');
+                actionButton.disabled = !youtubeUrl;
+                
+                if (youtubeUrl && !isValidUrl) {
+                    errorText.textContent = 'Invalid YouTube URL format. Use https://youtube.com/watch?v=... or https://youtu.be/...';
+                    errorMessage.classList.remove('hidden');
+                } else {
+                    errorMessage.classList.add('hidden');
+                }
+            }
+        });
+        
+        // Handle action button click (transcription or OCR)
+        actionButton.addEventListener('click', async function() {
             // Reset UI state
-            transcribeButton.disabled = true;
+            actionButton.disabled = true;
             errorMessage.classList.add('hidden');
             
-            if (isYoutubeMode) {
-                // YouTube URL transcription
-                const youtubeUrl = youtubeUrlInput.value.trim();
-                if (!youtubeUrl) return;
+            // Check the current mode and active tab
+            let activeTabHeader = currentMode === 'audio-video' ? audioVideoTabs : documentOcrTabs;
+            const activeTab = activeTabHeader.querySelector('.tab.active').getAttribute('data-tab');
+            
+            // Handle based on current mode
+            if (currentMode === 'audio-video') {
+                const isYoutubeMode = activeTab === 'youtube-tab';
                 
-                // Prepare UI for transcription
-                transcribeButton.innerHTML = '<span class="spinner"></span> Processing...';
-                uploadStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Fetching YouTube audio...';
-                uploadStatus.classList.remove('hidden');
-                
-                try {
-                    // Call YouTube transcription endpoint
-                    const transcribeResponse = await fetch('/transcribe_youtube', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ 
-                            youtube_url: youtubeUrl,
-                            include_timestamps: timestampToggle.checked 
-                        })
-                    });
+                if (isYoutubeMode) {
+                    // YouTube URL transcription
+                    const youtubeUrl = youtubeUrlInput.value.trim();
+                    if (!youtubeUrl) return;
                     
-                    const transcribeData = await transcribeResponse.json();
+                    // Prepare UI for transcription
+                    actionButton.innerHTML = '<span class="spinner"></span> Processing...';
+                    uploadStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Fetching YouTube audio...';
+                    uploadStatus.classList.remove('hidden');
                     
-                    if (transcribeResponse.ok) {
-                        // Format transcript with timestamps and line breaks
-                        const formattedHtml = formatTranscript(transcribeData.transcript);
-                        
-                        // Sanitize HTML before inserting into DOM
-                        const sanitizedHtml = DOMPurify.sanitize(formattedHtml, { 
-                            USE_PROFILES: { html: true }, 
-                            ALLOWED_TAGS: ['br', 'span'], 
-                            ALLOWED_ATTR: ['class'] 
+                    try {
+                        // Call YouTube transcription endpoint
+                        const transcribeResponse = await fetch('/transcribe_youtube', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 
+                                youtube_url: youtubeUrl,
+                                include_timestamps: timestampToggle.checked 
+                            })
                         });
                         
-                        transcriptContent.innerHTML = sanitizedHtml;
-                        uploadStatus.innerHTML = '<i class="fas fa-check-circle"></i> Transcription complete!';
-                        transcribeButton.innerHTML = '<i class="fas fa-check"></i> Transcribed';
-                        transcriptStatus.classList.remove('hidden');
-                        copyButton.disabled = false;
+                        const transcribeData = await transcribeResponse.json();
                         
-                        // Update YouTube title if available - sanitize title as well
-                        if (transcribeData.title) {
-                            youtubeTitle.textContent = transcribeData.title;
+                        if (transcribeResponse.ok) {
+                            // Format transcript with timestamps and line breaks
+                            const formattedHtml = formatTranscript(transcribeData.transcript);
+                            
+                            // Sanitize HTML before inserting into DOM
+                            const sanitizedHtml = DOMPurify.sanitize(formattedHtml, { 
+                                USE_PROFILES: { html: true }, 
+                                ALLOWED_TAGS: ['br', 'span'], 
+                                ALLOWED_ATTR: ['class'] 
+                            });
+                            
+                            resultContent.innerHTML = sanitizedHtml;
+                            uploadStatus.innerHTML = '<i class="fas fa-check-circle"></i> Transcription complete!';
+                            actionButton.innerHTML = '<i class="fas fa-check"></i> Transcribed';
+                            resultStatus.classList.remove('hidden');
+                            copyButton.disabled = false;
+                            
+                            // Update YouTube title if available - sanitize title as well
+                            if (transcribeData.title) {
+                                youtubeTitle.textContent = transcribeData.title;
+                            }
+                        } else {
+                            throw new Error(transcribeData.error || 'Transcription failed');
                         }
-                    } else {
-                        throw new Error(transcribeData.error || 'Transcription failed');
+                    } catch (error) {
+                        uploadStatus.classList.add('hidden');
+                        errorText.textContent = error.message;
+                        errorMessage.classList.remove('hidden');
+                        actionButton.innerHTML = '<i class="fas fa-language"></i> Transcribe';
+                        actionButton.disabled = false;
                     }
-                } catch (error) {
-                    uploadStatus.classList.add('hidden');
-                    errorText.textContent = error.message;
-                    errorMessage.classList.remove('hidden');
-                    transcribeButton.innerHTML = '<i class="fas fa-language"></i> Transcribe';
-                    transcribeButton.disabled = false;
-                }
-            } else {
-                // File upload transcription
-                const file = audioFileInput.files[0];
-                if (!file) return;
-                
-                // Step 1: Upload file
-                transcribeButton.innerHTML = '<span class="spinner"></span> Uploading...';
-                uploadStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Uploading file...';
-                uploadStatus.classList.remove('hidden');
-                
-                const formData = new FormData();
-                formData.append('audio', file);
-                
-                try {
+                } else {
+                    // Audio file upload transcription
+                    const file = audioFileInput.files[0];
+                    if (!file) return;
+                    
                     // Step 1: Upload file
-                    const uploadResponse = await fetch('/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
+                    actionButton.innerHTML = '<span class="spinner"></span> Uploading...';
+                    uploadStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Uploading file...';
+                    uploadStatus.classList.remove('hidden');
                     
-                    const uploadData = await uploadResponse.json();
+                    const formData = new FormData();
+                    formData.append('audio', file);
                     
-                    if (!uploadResponse.ok) {
-                        throw new Error(uploadData.error || 'Upload failed');
-                    }
-                    
-                    const fileId = uploadData.file_id;
-                    
-                    // Step 2: Transcribe file
-                    uploadStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Transcribing audio...';
-                    transcribeButton.innerHTML = '<span class="spinner"></span> Transcribing...';
-                    
-                    const transcribeResponse = await fetch('/transcribe', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ 
-                            file_id: fileId,
-                            include_timestamps: timestampToggle.checked 
-                        })
-                    });
-                    
-                    const transcribeData = await transcribeResponse.json();
-                    
-                    if (transcribeResponse.ok) {
-                        // Format transcript with timestamps and line breaks
-                        const formattedHtml = formatTranscript(transcribeData.transcript);
-                        
-                        // Sanitize HTML before inserting into DOM
-                        const sanitizedHtml = DOMPurify.sanitize(formattedHtml, { 
-                            USE_PROFILES: { html: true }, 
-                            ALLOWED_TAGS: ['br', 'span'], 
-                            ALLOWED_ATTR: ['class'] 
+                    try {
+                        // Step 1: Upload file
+                        const uploadResponse = await fetch('/upload', {
+                            method: 'POST',
+                            body: formData
                         });
                         
-                        transcriptContent.innerHTML = sanitizedHtml;
-                        uploadStatus.innerHTML = '<i class="fas fa-check-circle"></i> Transcription complete!';
-                        transcribeButton.innerHTML = '<i class="fas fa-check"></i> Transcribed';
-                        transcriptStatus.classList.remove('hidden');
-                        copyButton.disabled = false;
-                    } else {
-                        throw new Error(transcribeData.error || 'Transcription failed');
+                        const uploadData = await uploadResponse.json();
+                        
+                        if (!uploadResponse.ok) {
+                            throw new Error(uploadData.error || 'Upload failed');
+                        }
+                        
+                        const fileId = uploadData.file_id;
+                        
+                        // Step 2: Transcribe file
+                        uploadStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Transcribing audio...';
+                        actionButton.innerHTML = '<span class="spinner"></span> Transcribing...';
+                        
+                        const transcribeResponse = await fetch('/transcribe', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 
+                                file_id: fileId,
+                                include_timestamps: timestampToggle.checked 
+                            })
+                        });
+                        
+                        const transcribeData = await transcribeResponse.json();
+                        
+                        if (transcribeResponse.ok) {
+                            // Format transcript with timestamps and line breaks
+                            const formattedHtml = formatTranscript(transcribeData.transcript);
+                            
+                            // Sanitize HTML before inserting into DOM
+                            const sanitizedHtml = DOMPurify.sanitize(formattedHtml, { 
+                                USE_PROFILES: { html: true }, 
+                                ALLOWED_TAGS: ['br', 'span'], 
+                                ALLOWED_ATTR: ['class'] 
+                            });
+                            
+                            resultContent.innerHTML = sanitizedHtml;
+                            uploadStatus.innerHTML = '<i class="fas fa-check-circle"></i> Transcription complete!';
+                            actionButton.innerHTML = '<i class="fas fa-check"></i> Transcribed';
+                            resultStatus.classList.remove('hidden');
+                            copyButton.disabled = false;
+                        } else {
+                            throw new Error(transcribeData.error || 'Transcription failed');
+                        }
+                    } catch (error) {
+                        uploadStatus.classList.add('hidden');
+                        errorText.textContent = error.message;
+                        errorMessage.classList.remove('hidden');
+                        actionButton.innerHTML = '<i class="fas fa-language"></i> Transcribe';
+                        actionButton.disabled = false;
                     }
-                } catch (error) {
-                    uploadStatus.classList.add('hidden');
-                    errorText.textContent = error.message;
-                    errorMessage.classList.remove('hidden');
-                    transcribeButton.innerHTML = '<i class="fas fa-language"></i> Transcribe';
-                    transcribeButton.disabled = false;
+                }
+            } else if (currentMode === 'document-ocr') {
+                const isImageMode = activeTab === 'image-tab';
+                
+                if (isImageMode) {
+                    // Process image OCR
+                    const file = imageFileInput.files[0];
+                    if (!file) return;
+                    
+                    // Prepare UI for OCR
+                    actionButton.innerHTML = '<span class="spinner"></span> Processing...';
+                    uploadStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Processing image...';
+                    uploadStatus.classList.remove('hidden');
+                    
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    
+                    try {
+                        const ocrResponse = await fetch('/ocr_image', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const ocrData = await ocrResponse.json();
+                        
+                        if (ocrResponse.ok) {
+                            // Format the OCR text
+                            const formattedText = ocrData.text.replace(/\n/g, '<br>');
+                            
+                            // Sanitize HTML before inserting into DOM
+                            const sanitizedHtml = DOMPurify.sanitize(formattedText, { 
+                                USE_PROFILES: { html: true }, 
+                                ALLOWED_TAGS: ['br'] 
+                            });
+                            
+                            resultContent.innerHTML = sanitizedHtml;
+                            uploadStatus.innerHTML = '<i class="fas fa-check-circle"></i> Text extraction complete!';
+                            actionButton.innerHTML = '<i class="fas fa-check"></i> Extracted';
+                            resultStatus.classList.remove('hidden');
+                            copyButton.disabled = false;
+                        } else {
+                            throw new Error(ocrData.error || 'OCR processing failed');
+                        }
+                    } catch (error) {
+                        uploadStatus.classList.add('hidden');
+                        errorText.textContent = error.message;
+                        errorMessage.classList.remove('hidden');
+                        actionButton.innerHTML = '<i class="fas fa-file-alt"></i> Extract Text';
+                        actionButton.disabled = false;
+                    }
+                } else {
+                    // Process PDF OCR
+                    const file = pdfFileInput.files[0];
+                    if (!file) return;
+                    
+                    // Prepare UI for OCR
+                    actionButton.innerHTML = '<span class="spinner"></span> Processing...';
+                    uploadStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Processing PDF...';
+                    uploadStatus.classList.remove('hidden');
+                    
+                    const formData = new FormData();
+                    formData.append('pdf', file);
+                    
+                    try {
+                        const ocrResponse = await fetch('/ocr_pdf', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const ocrData = await ocrResponse.json();
+                        
+                        if (ocrResponse.ok) {
+                            // Format the OCR text
+                            const formattedText = ocrData.text.replace(/\n/g, '<br>');
+                            
+                            // Sanitize HTML before inserting into DOM
+                            const sanitizedHtml = DOMPurify.sanitize(formattedText, { 
+                                USE_PROFILES: { html: true }, 
+                                ALLOWED_TAGS: ['br'] 
+                            });
+                            
+                            resultContent.innerHTML = sanitizedHtml;
+                            uploadStatus.innerHTML = '<i class="fas fa-check-circle"></i> Text extraction complete!';
+                            actionButton.innerHTML = '<i class="fas fa-check"></i> Extracted';
+                            resultStatus.classList.remove('hidden');
+                            copyButton.disabled = false;
+                        } else {
+                            throw new Error(ocrData.error || 'PDF processing failed');
+                        }
+                    } catch (error) {
+                        uploadStatus.classList.add('hidden');
+                        errorText.textContent = error.message;
+                        errorMessage.classList.remove('hidden');
+                        actionButton.innerHTML = '<i class="fas fa-file-alt"></i> Extract Text';
+                        actionButton.disabled = false;
+                    }
                 }
             }
         });
@@ -949,72 +1329,14 @@
             return formattedText.replace(/\n/g, '<br>');
         }
         
-        // Tab switching functionality
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                // Remove active class from all tabs
-                tabs.forEach(t => t.classList.remove('active'));
-                
-                // Add active class to clicked tab
-                tab.classList.add('active');
-                
-                // Hide all tab panes
-                tabPanes.forEach(pane => pane.classList.remove('active'));
-                
-                // Show the corresponding tab pane
-                const tabId = tab.getAttribute('data-tab');
-                document.getElementById(tabId).classList.add('active');
-                
-                // Reset UI state when switching tabs
-                resetUIState();
-                
-                // Enable or disable transcribe button based on active tab
-                if (tabId === 'youtube-tab') {
-                    transcribeButton.disabled = !youtubeUrlInput.value.trim();
-                    fileInfo.classList.add('hidden');
-                    if (youtubeUrlInput.value.trim()) {
-                        youtubeInfo.classList.remove('hidden');
-                    }
-                } else {
-                    transcribeButton.disabled = !audioFileInput.files.length;
-                    youtubeInfo.classList.add('hidden');
-                }
-            });
-        });
-        
-        // Handle YouTube URL input
-        youtubeUrlInput.addEventListener('input', function() {
-            const youtubeUrl = this.value.trim();
-            
-            // Simple YouTube URL validation
-            const youtubePattern = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]{11}.*$/;
-            const isValidUrl = youtubePattern.test(youtubeUrl);
-            
-            if (isValidUrl) {
-                youtubeInfo.classList.remove('hidden');
-                transcribeButton.disabled = false;
-                errorMessage.classList.add('hidden');
-            } else {
-                youtubeInfo.classList.add('hidden');
-                transcribeButton.disabled = !youtubeUrl;
-                
-                if (youtubeUrl && !isValidUrl) {
-                    errorText.textContent = 'Invalid YouTube URL format. Use https://youtube.com/watch?v=... or https://youtu.be/...';
-                    errorMessage.classList.remove('hidden');
-                } else {
-                    errorMessage.classList.add('hidden');
-                }
-            }
-        });
-        
-        // Copy transcript to clipboard
+        // Copy result to clipboard
         copyButton.addEventListener('click', function() {
             // Get the text content without HTML tags
-            const transcriptText = transcriptContent.innerText;
+            const resultText = resultContent.innerText;
             
             // Check if there's actual content to copy
-            if (transcriptText && !transcriptText.includes('No transcript yet')) {
-                navigator.clipboard.writeText(transcriptText).then(function() {
+            if (resultText && !resultText.includes('No content yet')) {
+                navigator.clipboard.writeText(resultText).then(function() {
                     // Show copied message
                     const tooltip = document.createElement('span');
                     tooltip.className = 'copied-tooltip';
@@ -1037,8 +1359,8 @@
         // Handle timestamp toggle
         timestampToggle.addEventListener('change', function() {
             // If transcript already exists, reformat it
-            if (transcriptContent.innerHTML && !transcriptContent.innerHTML.includes('placeholder-text')) {
-                const currentText = transcriptContent.innerText;
+            if (resultContent.innerHTML && !resultContent.innerHTML.includes('placeholder-text')) {
+                const currentText = resultContent.innerText;
                 // On toggle change, we need to re-apply formatting to show/hide timestamps
                 const formattedHtml = formatTranscript(currentText);
                 
@@ -1049,47 +1371,125 @@
                     ALLOWED_ATTR: ['class'] 
                 });
                 
-                transcriptContent.innerHTML = sanitizedHtml;
+                resultContent.innerHTML = sanitizedHtml;
             }
         });
         
-        // Handle new transcription button
-        newButton.addEventListener('click', function() {
-            // Reset form and UI state
-            resetUIState();
+        // Handle new button click
+        newButton.addEventListener('click', resetUIState);
+        
+        // Mode switching
+        modeOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                // Remove active class from all options
+                modeOptions.forEach(opt => opt.classList.remove('active'));
+                
+                // Add active class to clicked option
+                option.classList.add('active');
+                
+                // Get the mode
+                const mode = option.getAttribute('data-mode');
+                currentMode = mode;
+                
+                // Update UI based on mode
+                if (mode === 'audio-video') {
+                    cardTitle.innerHTML = '<i class="fas fa-microphone-alt"></i> Audio Transcriber';
+                    audioVideoTabs.classList.remove('hidden');
+                    documentOcrTabs.classList.add('hidden');
+                    timestampContainer.classList.remove('hidden');
+                    actionButton.innerHTML = '<i class="fas fa-language"></i> Transcribe';
+                    
+                    // Always show the first tab in audio-video mode when switching modes
+                    // This ensures we reset to audio upload tab when coming from PDF tab
+                    audioVideoTabs.querySelectorAll('.tab').forEach((tab, index) => {
+                        if (index === 0) {
+                            tab.classList.add('active');
+                        } else {
+                            tab.classList.remove('active');
+                        }
+                    });
+                    
+                    // Show the upload-tab pane
+                    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+                    document.getElementById('upload-tab').classList.add('active');
+                } else if (mode === 'document-ocr') {
+                    cardTitle.innerHTML = '<i class="fas fa-file-alt"></i> Text from Image/PDF';
+                    audioVideoTabs.classList.add('hidden');
+                    documentOcrTabs.classList.remove('hidden');
+                    timestampContainer.classList.add('hidden');
+                    actionButton.innerHTML = '<i class="fas fa-file-alt"></i> Extract Text';
+                    
+                    // Always show the first tab in document-ocr mode when switching modes
+                    documentOcrTabs.querySelectorAll('.tab').forEach((tab, index) => {
+                        if (index === 0) {
+                            tab.classList.add('active');
+                        } else {
+                            tab.classList.remove('active');
+                        }
+                    });
+                    
+                    // Show the image-tab pane
+                    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+                    document.getElementById('image-tab').classList.add('active');
+                }
+                
+                // Reset other UI elements
+                resetUIState();
+            });
         });
         
         // Function to reset UI to initial state
         function resetUIState() {
-            // Reset file input
+            // Reset file inputs
             audioFileInput.value = '';
+            imageFileInput.value = '';
+            pdfFileInput.value = '';
             
-            // Reset YouTube input
             // Don't reset youtubeUrlInput.value to preserve user input when switching tabs
             
             // Reset UI elements
             fileInfo.classList.add('hidden');
             youtubeInfo.classList.add('hidden');
+            imageInfo.classList.add('hidden');
+            pdfInfo.classList.add('hidden');
             uploadStatus.classList.add('hidden');
             errorMessage.classList.add('hidden');
-            transcriptStatus.classList.add('hidden');
+            resultStatus.classList.add('hidden');
             
             // Reset buttons
-            transcribeButton.disabled = true;
-            transcribeButton.innerHTML = '<i class="fas fa-language"></i> Transcribe';
+            actionButton.disabled = true;
+            if (currentMode === 'audio-video') {
+                actionButton.innerHTML = '<i class="fas fa-language"></i> Transcribe';
+            } else {
+                actionButton.innerHTML = '<i class="fas fa-file-alt"></i> Extract Text';
+            }
             copyButton.disabled = true;
             
-            // Reset transcript
-            transcriptContent.innerHTML = '<span class="placeholder-text">No transcript yet. Select an audio file or enter a YouTube URL and click "Transcribe".</span>';
+            // Reset result content
+            const placeholderText = currentMode === 'audio-video' 
+                ? 'No transcript yet. Select an audio file or enter a YouTube URL and click "Transcribe".'
+                : 'No result yet. Select an image or PDF file and click "Extract Text".';
+            resultContent.innerHTML = `<span class="placeholder-text">${placeholderText}</span>`;
             
-            // Check current tab and re-enable button if needed
-            const activeTab = document.querySelector('.tab.active').getAttribute('data-tab');
-            if (activeTab === 'youtube-tab' && youtubeUrlInput.value.trim()) {
-                transcribeButton.disabled = false;
-                youtubeInfo.classList.remove('hidden');
-            } else if (activeTab === 'upload-tab' && audioFileInput.files.length) {
-                transcribeButton.disabled = false;
-                fileInfo.classList.remove('hidden');
+            // Check current tab and re-enable button if needed based on mode
+            if (currentMode === 'audio-video') {
+                const activeTab = audioVideoTabs.querySelector('.tab.active').getAttribute('data-tab');
+                if (activeTab === 'youtube-tab' && youtubeUrlInput.value.trim()) {
+                    actionButton.disabled = false;
+                    youtubeInfo.classList.remove('hidden');
+                } else if (activeTab === 'upload-tab' && audioFileInput.files.length) {
+                    actionButton.disabled = false;
+                    fileInfo.classList.remove('hidden');
+                }
+            } else {
+                const activeTab = documentOcrTabs.querySelector('.tab.active').getAttribute('data-tab');
+                if (activeTab === 'image-tab' && imageFileInput.files.length) {
+                    actionButton.disabled = false;
+                    imageInfo.classList.remove('hidden');
+                } else if (activeTab === 'pdf-tab' && pdfFileInput.files.length) {
+                    actionButton.disabled = false;
+                    pdfInfo.classList.remove('hidden');
+                }
             }
         }
     </script>
