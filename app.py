@@ -8,8 +8,10 @@ import re
 import yt_dlp
 import uuid
 import time
+import PIL.Image
 from dotenv import load_dotenv
 from transcriber import transcribe_audio
+from ocr import ocr_image, ocr_pdf
 
 # Load environment variables from .env file
 load_dotenv()
@@ -252,6 +254,83 @@ def transcribe_youtube():
         return jsonify({'error': f'Error downloading YouTube video: {str(e)}'}), 400
     except Exception as e:
         logger.error(f"Error transcribing YouTube audio: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# OCR Image processing
+@app.route('/ocr_image', methods=['POST'])
+def process_image_ocr():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    # Check if file has an allowed extension
+    allowed_extensions = {'jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'}
+    if '.' not in file.filename or file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
+        return jsonify({'error': 'Unsupported file format'}), 400
+
+    # Check file size (20MB limit)
+    MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB in bytes
+    file.seek(0, os.SEEK_END)
+    file_size = file.tell()
+    file.seek(0)
+
+    if file_size > MAX_FILE_SIZE:
+        logger.warning(f"File too large: {file.filename}, size: {file_size/1024/1024:.2f}MB")
+        return jsonify({'error': f'File too large. Maximum size is 20MB. Your file is {file_size/1024/1024:.2f}MB.'}), 400
+
+    try:
+        # Process the image
+        image = PIL.Image.open(file)
+        logger.info(f"Image loaded successfully: {file.filename}")
+        
+        # Process the image with OCR
+        extracted_text = ocr_image(image)
+        logger.info(f"OCR processing complete for image: {file.filename}")
+        
+        return jsonify({'text': extracted_text}), 200
+    except Exception as e:
+        logger.error(f"Error processing image: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# OCR PDF processing
+@app.route('/ocr_pdf', methods=['POST'])
+def process_pdf_ocr():
+    if 'pdf' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    
+    file = request.files['pdf']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    # Check if file has an allowed extension
+    if '.' not in file.filename or file.filename.rsplit('.', 1)[1].lower() != 'pdf':
+        return jsonify({'error': 'Unsupported file format. Only PDF files are allowed.'}), 400
+
+    # Check file size (20MB limit)
+    MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB in bytes
+    file.seek(0, os.SEEK_END)
+    file_size = file.tell()
+    file.seek(0)
+
+    if file_size > MAX_FILE_SIZE:
+        logger.warning(f"File too large: {file.filename}, size: {file_size/1024/1024:.2f}MB")
+        return jsonify({'error': f'File too large. Maximum size is 20MB. Your file is {file_size/1024/1024:.2f}MB.'}), 400
+
+    try:
+        # Read the PDF content
+        pdf_content = file.read()
+        logger.info(f"PDF loaded successfully: {file.filename}")
+        
+        # Process the PDF with OCR
+        extracted_text = ocr_pdf(pdf_content)
+        logger.info(f"OCR processing complete for PDF: {file.filename}")
+        
+        return jsonify({'text': extracted_text}), 200
+    except Exception as e:
+        logger.error(f"Error processing PDF: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

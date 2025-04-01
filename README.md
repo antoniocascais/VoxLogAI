@@ -1,7 +1,7 @@
       
-# VoxLogAI: AI Audio & YouTube Transcription
+# VoxLogAI: AI Audio Transcription & OCR
 
-**VoxLogAI** is an AI-powered web application designed for fast and accurate transcription of both audio files and YouTube videos, utilizing Google's powerful Gemini API. Get text from your audio content effortlessly.
+**VoxLogAI** is an AI-powered web application designed for fast and accurate transcription of audio files and YouTube videos, as well as OCR (Optical Character Recognition) for images and PDFs, utilizing Google's powerful Gemini API. Get text from your audio and document content effortlessly.
 
 ## Try VoxLogAI Live
 
@@ -17,15 +17,24 @@ Access the hosted version of the application here:
 
 ## Key Features
 
-VoxLogAI offers a streamlined way to convert speech to text:
+VoxLogAI offers a streamlined way to extract text from various media:
 
+### Audio & Video
 -   **Audio File Transcription:** Upload and transcribe common audio formats (WAV, MP3, AIFF, AAC, OGG, FLAC).
 -   **YouTube Video Transcription:** Simply paste a YouTube URL to transcribe the video's audio content.
--   **AI-Powered Accuracy:** Leverages Google's advanced Gemini model for high-quality transcription results.
 -   **Optional Timestamps:** Include timestamps in your transcript to easily reference specific audio segments.
--   **Privacy-Conscious:** Your files are processed for transcription and are not permanently stored on the server.
--   **User-Friendly Interface:** Clean, intuitive design for a smooth user experience.
--   **Max File Size/Length:** Supports audio files up to 15MB (typically ~10-15 minutes, depending on quality). YouTube transcription has similar practical limits due to processing time.
+-   **Max Audio Size:** Supports audio files up to 15MB (typically ~10-15 minutes, depending on quality).
+
+### Document OCR
+-   **Image Text Extraction:** Upload images (JPG, PNG, WEBP, HEIC) to extract contained text.
+-   **PDF Text Extraction:** Extract text from PDF documents with advanced OCR capabilities.
+-   **Max Document Size:** Supports image and PDF files up to 20MB.
+
+### General Features
+-   **AI-Powered Accuracy:** Leverages Google's advanced Gemini model for high-quality text extraction results.
+-   **Privacy-Conscious:** Your files are processed and are not permanently stored on the server.
+-   **User-Friendly Interface:** Clean, intuitive design with mode switching for different content types.
+-   **Copy to Clipboard:** Easily copy extracted text for use in other applications.
 
 ## Getting Started (Self-Hosting)
 

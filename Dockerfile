@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 COPY transcriber.py .
+COPY ocr.py .
 COPY templates/ templates/
 COPY LICENSE .
 

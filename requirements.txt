@@ -5,3 +5,4 @@ tenacity==9.0.0
 python-dotenv==1.1.0
 gunicorn==23.0.0
 yt-dlp==2025.3.26
+Pillow==11.2.0
